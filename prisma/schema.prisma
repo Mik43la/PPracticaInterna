@@ -1,0 +1,106 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               Int              @default(autoincrement())
+  username         String           @id @unique
+  email            String
+  name             String
+  code             String           @unique
+  password         String
+  rolename         String           @default("user")
+  deactivationTime DateTime?
+  role             Role             @relation(fields: [rolename], references: [name], onDelete: SetDefault, onUpdate: Cascade)
+  courses          Course[]
+  careerOfUser     CareerOfUser[]
+  careers          Career[]
+  studentCourses   StudentCourses[]
+
+  @@map("users")
+}
+
+model Career {
+  id                  Int                @id @default(autoincrement())
+  name                String             @unique
+  facultyHeadUsername String
+  facultyHead         User               @relation(fields: [facultyHeadUsername], references: [username], onUpdate: Cascade)
+  courses             CareersForCourse[]
+  careerOfUser        CareerOfUser[]
+
+  @@map("careers")
+}
+
+model CareerOfUser {
+  id         Int    @default(autoincrement())
+  usercode   String @unique
+  userName   String @default("none")
+  career     Int    @default(0)
+  careerName Career @relation(fields: [career], references: [id], onDelete: SetDefault, onUpdate: Cascade)
+  user       User   @relation(fields: [usercode], references: [code], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([usercode, career])
+  @@map("career_of_user")
+}
+
+model Course {
+  id             Int                @id @default(autoincrement())
+  name           String
+  startTerm      Int
+  endTerm        Int
+  schedule       String
+  lecturer       String
+  credits        Int
+  ownerUsername  String
+  owner          User               @relation(fields: [ownerUsername], references: [username], onUpdate: Cascade)
+  careers        CareersForCourse[]
+  seasonName     String
+  season         Season             @relation(fields: [seasonName], references: [name], onDelete: Cascade, onUpdate: Cascade)
+  studentCourses StudentCourses[]
+
+  @@map("courses")
+}
+
+model CareersForCourse {
+  courseId Int
+  Course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  careerId Int
+  Career   Career @relation(fields: [careerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([courseId, careerId])
+  @@map("careers_for_course")
+}
+
+model StudentCourses {
+  studentCode String
+  courseId    Int
+  Course      Course @relation(fields: [courseId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Student     User   @relation(fields: [studentCode], references: [code], onUpdate: Cascade)
+
+  @@id([studentCode, courseId])
+  @@map("student_courses")
+}
+
+model Role {
+  id    Int    @default(autoincrement())
+  name  String @id
+  users User[]
+
+  @@map("roles")
+}
+
+model Season {
+  id      Int      @id @default(autoincrement())
+  name    String   @unique
+  courses Course[]
+
+  @@map("seasons")
+}
